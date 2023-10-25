@@ -1,0 +1,121 @@
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Interactive Map with Input Fields</title>
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+        <style>
+            /* Style pour définir la taille de la carte */
+            #map {
+                height: 400px;
+                width: 100%;
+            }
+            #button-container {
+                position: absolute;
+                top: 10px;
+                left: 10px;
+                z-index: 1000; /* Assurez-vous que les boutons sont au premier plan */
+            }
+            #button-container button {
+                margin: 5px;
+            }
+            #input-container {
+                position: absolute;
+                top: 10px;
+                right: 10px;
+                z-index: 1000; /* Assurez-vous que les champs d'entrée sont au premier plan */
+            }
+            #input-container input {
+                margin: 5px;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="map"></div>
+        <div id="button-container">
+            <button onclick="addPoint()">Add Point</button>
+            <button onclick="connectPoints()">Connect Points</button>
+        </div>
+        <div id="input-container">
+            <input type="text" id="latitudeInput" placeholder="Latitude" onclick="disableMapInteractions()">
+            <input type="text" id="longitudeInput" placeholder="Longitude" onclick="disableMapInteractions()">
+            <button onclick="updateMap()">Submit</button>
+        </div>
+
+        <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+        <script>
+            var map = L.map('map').setView([48.8588443, 2.2943506], 14); // Centrez la carte sur les coordonnées spécifiées
+
+            var tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+            }).addTo(map);
+
+            var points = [];
+            var lines = L.layerGroup();
+            lines.addTo(map);
+            var addedPoints = [];
+            function addPoint() {
+                map.on('click', function(e) {
+                    var latitude = e.latlng.lat;
+                    var longitude = e.latlng.lng;
+
+                    var marker = L.marker([latitude, longitude]).addTo(map);
+                    addedPoints.push({ latitude: latitude, longitude: longitude });
+                    points.push(marker);
+                });
+            }
+
+            function connectPoints() {
+                if (points.length < 2) {
+                    alert('Vous devez ajouter au moins deux points pour les connecter.');
+                    return;
+                }
+
+                var latlngs = points.map(function(point) {
+                    return point.getLatLng();
+                });
+
+                // Relier le dernier point au premier point pour former une boucle
+                latlngs.push(latlngs[0]);
+
+                var polyline = L.polyline(latlngs, { color: 'red' }).addTo(lines);
+                points = []; // Réinitialiser les points
+            }
+
+            // Désactiver les interactions de la carte pendant l'édition des champs d'entrée
+            function disableMapInteractions() {
+                map.off('click');
+            }
+
+            // Activer les interactions de la carte après avoir édité les champs d'entrée
+            function enableMapInteractions() {
+                map.on('click', function(e) {
+                    var latitude = e.latlng.lat;
+                    var longitude = e.latlng.lng;
+
+                    var marker = L.marker([latitude, longitude]).addTo(map);
+                    points.push(marker);
+                });
+            }
+
+            // Mettre à jour la carte en fonction des coordonnées saisies
+            function updateMap() {
+                var latitude = parseFloat(document.getElementById('latitudeInput').value);
+                var longitude = parseFloat(document.getElementById('longitudeInput').value);
+
+                if (!isNaN(latitude) && !isNaN(longitude) && latitude >= -90 && latitude <= 90 && longitude >= -180 && longitude <= 180) {
+                    var marker = L.marker([latitude, longitude]).addTo(map);
+                    map.setView([latitude, longitude], 14);
+                    points.push(marker);
+                } else {
+                    alert('Veuillez saisir des coordonnées valides.');
+                }
+
+                // Réactiver les interactions de la carte après avoir cliqué sur "Submit"
+                enableMapInteractions();
+            }
+ 
+
+ 
+        </script>
+    </body>
+    </html>
